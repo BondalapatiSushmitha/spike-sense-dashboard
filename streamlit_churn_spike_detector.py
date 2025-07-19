@@ -6,11 +6,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 
-# Page config
 st.set_page_config(layout="wide")
 st.title("📊 SpikeSense - Real-time Player Churn & Spike Detection")
 
-# File Upload
 uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
 
 if uploaded_file:
@@ -18,19 +16,19 @@ if uploaded_file:
 else:
     df = pd.read_csv("sample_churn_3000.csv")
 
-# ✅ Check if 'event_date' exists
+# ✅ Added check to ensure 'event_date' exists
 if 'event_date' not in df.columns:
     st.error("The dataset must contain a column named 'event_date'. Please upload a valid file.")
     st.stop()
 
-# Convert to datetime
+# Ensure date column is datetime
 df["event_date"] = pd.to_datetime(df["event_date"])
 
-# Display Sample Data
+# Display DataFrame
 st.subheader("📋 Sample Data")
 st.dataframe(df.head())
 
-# 📈 Churn Trend Over Time
+# Visualize churn over time using a line graph
 st.subheader("📈 Churn Trend Over Time")
 churn_over_time = df.groupby("event_date")["is_churn"].mean()
 fig, ax = plt.subplots()
@@ -38,11 +36,10 @@ ax.plot(churn_over_time.index, churn_over_time.values, color="red", linewidth=2)
 ax.set_title("Daily Churn Rate Over Time")
 ax.set_xlabel("Date")
 ax.set_ylabel("Churn Rate")
-plt.xticks(rotation=45, ha='right')  # ✅ Fixed overlapping x-axis
-fig.tight_layout()
+plt.xticks(rotation=45)  # Rotate x-axis dates to avoid overlap
 st.pyplot(fig)
 
-# 🤖 Churn Detection Model
+# ML Model
 st.subheader("🤖 Churn Detection Model Training")
 X = df[["play_time", "matches_played", "avg_score"]]
 y = df["is_churn"]
@@ -55,26 +52,31 @@ accuracy = model.score(X_test, y_test)
 st.success(f"Model Accuracy: {accuracy:.2f}")
 
 # Classification report
-st.subheader("📋 Classification Report")
+st.text("Classification Report:")
 y_pred = model.predict(X_test)
+st.code(classification_report(y_test, y_pred))
+
+# 🎯 Model Evaluation
 report = classification_report(y_test, y_pred, output_dict=True)
+st.subheader("📋 Classification Report")
 st.dataframe(pd.DataFrame(report).transpose())
 
-# 🌟 Feature Importance
+# 🔍 Feature Importance
 st.subheader("🌟 Feature Importance")
 importances = model.feature_importances_
 features = X.columns
 importance_df = pd.DataFrame({"Feature": features, "Importance": importances}).sort_values(by="Importance", ascending=False)
 
 fig2, ax2 = plt.subplots()
-sns.barplot(x="Importance", y="Feature", data=importance_df, palette="viridis", ax=ax2)
+# ✅ Fixed seaborn deprecation warning by adding hue & legend
+sns.barplot(x="Importance", y="Feature", data=importance_df, hue="Feature", palette="viridis", ax=ax2, legend=False)
 ax2.set_title("Feature Importance from Random Forest")
 st.pyplot(fig2)
 
-# 🚨 Top Churn Spike Dates
+# 📅 Highlight Top Churn Spike Dates
 st.subheader("🚨 Top 3 Churn Spike Dates")
-top_spikes = churn_over_time.sort_values(ascending=False).head(3)
-st.table(top_spikes)
+churn_over_time_sorted = churn_over_time.sort_values(ascending=False).head(3)
+st.table(churn_over_time_sorted)
 
 # 🧠 Sidebar Branding
 with st.sidebar:
