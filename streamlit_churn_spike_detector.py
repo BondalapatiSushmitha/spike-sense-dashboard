@@ -16,6 +16,11 @@ if uploaded_file:
 else:
     df = pd.read_csv("sample_churn_3000.csv")
 
+# ✅ Added check to ensure 'event_date' exists
+if 'event_date' not in df.columns:
+    st.error("The dataset must contain a column named 'event_date'. Please upload a valid file.")
+    st.stop()
+
 # Ensure date column is datetime
 df["event_date"] = pd.to_datetime(df["event_date"])
 
@@ -50,7 +55,6 @@ st.text("Classification Report:")
 y_pred = model.predict(X_test)
 st.code(classification_report(y_test, y_pred))
 
-
 # 🎯 Model Evaluation
 y_pred = model.predict(X_test)
 report = classification_report(y_test, y_pred, output_dict=True)
@@ -64,7 +68,8 @@ features = X.columns
 importance_df = pd.DataFrame({"Feature": features, "Importance": importances}).sort_values(by="Importance", ascending=False)
 
 fig2, ax2 = plt.subplots()
-sns.barplot(x="Importance", y="Feature", data=importance_df, palette="viridis", ax=ax2)
+# ✅ Fixed seaborn deprecation warning by adding hue & legend
+sns.barplot(x="Importance", y="Feature", data=importance_df, hue="Feature", palette="viridis", ax=ax2, legend=False)
 ax2.set_title("Feature Importance from Random Forest")
 st.pyplot(fig2)
 
